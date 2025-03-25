@@ -1,0 +1,354 @@
+
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>26 PARTY MOD PREDICTIOR V6.7</title>
+    <style>
+        /* General Styling */
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(45deg, #0f0f0f, #1a1a1a);
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+
+        /* Main App Container */
+        #mainApp {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(20, 20, 20, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+            animation: glow 1.5s infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+            }
+            to {
+                box-shadow: 0 0 25px rgba(0, 255, 255, 0.6);
+            }
+        }
+
+        h1 {
+            font-size: 26px;
+            color: cyan;
+            text-shadow: 0 0 10px cyan;
+        }
+
+        h2 {
+            font-size: 20px;
+            color: lightblue;
+        }
+
+        /* Stats and Prediction Box */
+        #stats, #currentPrediction {
+            background: rgba(30, 30, 30, 0.9);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 18px;
+            margin: 8px 0;
+        }
+
+        /* Neon Glow Effect */
+        #prediction {
+            font-size: 22px;
+            font-weight: bold;
+            color: #ff0;
+            text-shadow: 0 0 10px yellow;
+            animation: glowText 1s infinite alternate;
+        }
+
+        @keyframes glowText {
+            from {
+                text-shadow: 0 0 10px yellow;
+            }
+            to {
+                text-shadow: 0 0 20px orange;
+            }
+        }
+
+        /* History Section */
+        .history-item {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            background: rgba(40, 40, 40, 0.8);
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .history-item:hover {
+            transform: scale(1.05);
+        }
+
+        .win {
+            color: #0f0;
+            text-shadow: 0 0 8px lime;
+        }
+
+        .loss {
+            color: #f00;
+            text-shadow: 0 0 8px red;
+        }
+
+        .pending {
+            color: #ffa500;
+            text-shadow: 0 0 8px orange;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            #mainApp {
+                width: 90%;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="mainApp">
+        <h1>😈 26 Party Mod Predictior v6.7</h1>
+        <div id="stats">
+            <p>🏆 Total Wins: <span id="totalWins">0</span></p>
+            <p>❌ Total Losses: <span id="totalLosses">0</span></p>
+            <p>🎯 Accuracy: <span id="accuracy">0%</span></p>
+        </div>
+        <div id="currentPrediction">
+            <p>🕐 Current Period: <span id="currentPeriod">-</span></p>
+            <p>🔮 Prediction: <span id="prediction">-</span></p>
+        </div>
+        <div id="history">
+            <h2>📜 History</h2>
+        </div>
+    </div>
+
+    <script>
+        let historyData = [];
+        let totalWins = 0;
+        let totalLosses = 0;
+        let totalPredictions = 0;
+        let correctPredictions = 0;
+        let currentPeriod = null;
+        let lastFetchedPeriod = null;
+
+        // Function to fetch game result
+        async function fetchGameResult() {
+            try {
+                let response = await fetch("https://api.bdg88zf.com/api/webapi/GetNoaverageEmerdList", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        pageSize: 10,
+                        pageNo: 1,
+                        typeId: 1,
+                        language: 0,
+                        random: "4a0522c6ecd8410496260e686be2a57c",
+                        signature: "334B5E70A0C9B8918B0B15E517E2069C",
+                        timestamp: Math.floor(Date.now() / 1000)
+                    })
+                });
+
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+                let data = await response.json();
+                let latestResult = data?.data?.list?.[0];
+                if (latestResult) {
+                    return { period: latestResult.issueNumber, result: latestResult.number };
+                } else {
+                    throw new Error("No data found in API");
+                }
+            } catch (error) {
+                console.error("Error fetching game result:", error);
+                return null;
+            }
+        }
+
+        function trendAnalysis(history) {
+            let bigCount = history.filter(item => item.result >= 5).length;
+            let smallCount = history.filter(item => item.result < 5).length;
+            return bigCount > smallCount ? "BIG" : "SMALL";
+        }
+
+        function autoPredict() {
+            return { type: trendAnalysis(historyData) };
+        }
+
+        async function updatePrediction() {
+            let apiResult = await fetchGameResult();
+
+            if (apiResult && apiResult.period !== lastFetchedPeriod) {
+                lastFetchedPeriod = apiResult.period;
+                currentPeriod = (BigInt(apiResult.period) + 1n).toString();
+
+                let prediction = autoPredict();
+
+                document.getElementById("currentPeriod").innerText = currentPeriod;
+                document.getElementById("prediction").innerText = prediction.type;
+
+                historyData.unshift({ period: currentPeriod, result: apiResult.result, prediction: prediction.type, resultStatus: "Pending" });
+                updateHistory();
+                checkWinLoss(apiResult);
+            }
+        }
+
+        function checkWinLoss(apiResult) {
+            if (!apiResult) return;
+
+            historyData.forEach(item => {
+                if (item.period === apiResult.period) {
+                    let actualResult = apiResult.result >= 5 ? "BIG" : "SMALL";
+                    item.resultStatus = (item.prediction === actualResult) ? "WIN" : "LOSS";
+                }
+            });
+
+            updateStats();
+            updateHistory();
+        }
+
+        function updateStats() {
+            totalWins = historyData.filter(item => item.resultStatus === "WIN").length;
+            totalLosses = historyData.filter(item => item.resultStatus === "LOSS").length;
+            totalPredictions = historyData.length;
+            correctPredictions = totalWins;
+
+            document.getElementById("totalWins").innerText = totalWins;
+            document.getElementById("totalLosses").innerText = totalLosses;
+            document.getElementById("accuracy").innerText = ((correctPredictions / totalPredictions) * 100 || 0).toFixed(2) + '%';
+        }
+
+        function updateHistory() {
+            let historyDiv = document.getElementById("history");
+            historyDiv.innerHTML = historyData.map(item => `
+                <div class="history-item ${item.resultStatus.toLowerCase()}">
+                    ⏳ <strong>Period:</strong> ${item.period}<br>
+                    ⭐ <strong>Prediction:</strong> ${item.prediction}<br>
+                    ${item.resultStatus === "WIN" ? "🤑 WIN" : item.resultStatus === "LOSS" ? "☠️ LOSS" : "🟡 Pending"}
+                </div>`).join('');
+        }
+
+        setInterval(updatePrediction, 3000);
+    </script>
+</body>
+</html><style>/* General Styling */
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+    color: #fff;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* Main App Container */
+#mainApp {
+    width: 90%;
+    max-width: 600px;
+    background: rgba(25, 25, 25, 0.9);
+    padding: 20px;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+    transition: all 0.3s ease-in-out;
+}
+
+h1 {
+    font-size: 28px;
+    color: cyan;
+    text-shadow: 0 0 15px cyan;
+    text-align: center;
+}
+
+h2 {
+    font-size: 22px;
+    color: lightblue;
+    text-shadow: 0 0 10px lightblue;
+}
+
+/* Stats and Prediction Box */
+#stats, #currentPrediction {
+    background: rgba(30, 30, 30, 0.8);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+    margin-bottom: 20px;
+    transition: transform 0.3s ease;
+}
+
+#stats:hover, #currentPrediction:hover {
+    transform: scale(1.03);
+}
+
+/* Neon Glow Effect */
+#prediction {
+    font-size: 22px;
+    font-weight: bold;
+    color: #ff0;
+    text-shadow: 0 0 15px yellow;
+    animation: glowText 1s infinite alternate;
+}
+
+@keyframes glowText {
+    from {
+        text-shadow: 0 0 10px yellow;
+    }
+    to {
+        text-shadow: 0 0 25px orange;
+    }
+}
+
+/* History Section */
+.history-item {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    background: rgba(40, 40, 40, 0.85);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.history-item:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+}
+
+/* Win/Loss/Pending Colors */
+.win {
+    color: #0f0;
+    text-shadow: 0 0 10px lime;
+    font-weight: bold;
+}
+
+.loss {
+    color: #f00;
+    text-shadow: 0 0 10px red;
+    font-weight: bold;
+}
+
+.pending {
+    color: #ffa500;
+    text-shadow: 0 0 10px orange;
+    font-weight: bold;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    #mainApp {
+        width: 95%;
+        padding: 15px;
+    }
+}</style>
